@@ -6,7 +6,9 @@ const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 export const supabase = createClient(URL, KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   global: { fetch: (url, options = {}) => {
-    options.headers = { ...options.headers, 'Accept': 'application/json', 'Content-Type': 'application/json' }
-    return fetch(url, options)
+    const headers = new Headers(options.headers || {})
+    if (!headers.has('Accept')) headers.set('Accept', 'application/json')
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+    return fetch(url, { ...options, headers })
   }}
 })
