@@ -7,8 +7,10 @@ export const supabase = createClient(URL, KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
   global: { fetch: (url, options = {}) => {
     const headers = new Headers(options.headers || {})
-    if (!headers.has('Accept')) headers.set('Accept', 'application/json')
-    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+    headers.set('Accept', 'application/json')
+    if (options.method && options.method !== 'GET') {
+      headers.set('Content-Type', 'application/json')
+    }
     return fetch(url, { ...options, headers })
   }}
 })
