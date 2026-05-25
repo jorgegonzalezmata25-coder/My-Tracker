@@ -1,2 +1,12 @@
-import { createClient } from "@supabase/supabase-js"
-export const supabase = createClient("https://xqozyklkdejvuzkkyvtb.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxb3p5a2xrZGVqdnV6a2t5dnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NzAyNDEsImV4cCI6MjA5NTI0NjI0MX0.iBEPErVgLVGPbEIbQ7qjDcauMWhvVu7PDQl5dnxboUA",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},global:{headers:{"Accept":"application/json","Content-Type":"application/json"}}})
+import { createClient } from '@supabase/supabase-js'
+
+const URL = 'https://xqozyklkdejvuzkkyvtb.supabase.co'
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhxb3p5a2xrZGVqdnV6a2t5dnRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NzAyNDEsImV4cCI6MjA5NTI0NjI0MX0.iBEPErVgLVGPbEIbQ7qjDcauMWhvVu7PDQl5dnxboUA'
+
+export const supabase = createClient(URL, KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+  global: { fetch: (url, options = {}) => {
+    options.headers = { ...options.headers, 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    return fetch(url, options)
+  }}
+})
