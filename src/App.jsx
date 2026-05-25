@@ -40,7 +40,7 @@ export default function App() {
   const [syncing,setSyncing]=useState(false)
   useEffect(()=>{supabase.auth.getSession().then(({data})=>setSession(data.session));const{data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s));return()=>subscription.unsubscribe()},[])
   useEffect(()=>{if(!session)return;const load=async()=>{const{data}=await supabase.from("items").select("data").eq("user_id",session.user.id).order("updated_at",{ascending:false}).limit(1).single();if(data?.data){setItemsRaw(data.data.items??initialItems);setNextId(data.data.nextId??10);setWindowDays(data.data.windowDays??7);setShowCharts(data.data.showCharts??true)}};load()},[session])
-  const saveToSupabase=useCallback(async(newState)=>{if(!session)return;setSyncing(true);await supabase.from("items").upsert({user_id:session.user.id,data:newState,updated_at:new Date().toISOString()},{onConflict:"user_id"});setSyncing(false)},[session])
+  const saveToSupabase=useCallback(async(newState)=>{if(!session)return;setSyncing(true);try{const{data:ex}=await supabase.from("items").select("id").eq("user_id",session.user.id).maybeSingle();if(ex){await supabase.from("items").update({data:newState,updated_at:new Date().toISOString()}).eq("user_id",session.user.id)}else{await supabase.from("items").insert({user_id:session.user.id,data:newState,updated_at:new Date().toISOString()})}}catch(e){console.error(e)}finally{setSyncing(false)}},[session])
   const setItems=(v)=>{const next=typeof v==="function"?v(items):v;setItemsRaw(next);saveToSupabase({items:next,nextId,windowDays,showCharts})}
   const days=useMemo(()=>getLastDays(windowDays),[windowDays])
   const tareas=items.filter(i=>i.category==="📋 Tarea")
