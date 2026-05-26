@@ -225,7 +225,8 @@ const FinanceTracker=({onBack})=>{
   const[state,setStateRaw]=useState(()=>fLoad()??FIN_DEF);
   const[tab,setTab]=useState("dashboard");
   const setState=(upd)=>setStateRaw(prev=>{const next=typeof upd==="function"?upd(prev):upd;fSave(next);return next;});
-  const allTx=useMemo(()=>{const now=new Date();const instances=[];for(let offset=-2;offset<=1;offset++){const d=new Date(now.getFullYear(),now.getMonth()+offset,1);state.templates.forEach(t=>generateInstances(t,d.getFullYear(),d.getMonth()).forEach(i=>instances.push(i)));}return[...instances,...state.manualTx];},[state.templates,state.manualTx]);
+  const allTx=useMemo(()=>{const now=new Date();const today=now.toISOString().slice(0,10);const instances=[];for(let offset=-2;offset<=1;offset++){const d=new Date(now.getFullYear(),now.getMonth()+offset,1);state.templates.forEach(t=>generateInstances(t,d.getFullYear(),d.getMonth()).forEach(i=>instances.push(i)));}// Only show entries on or before today
+const all=[...instances,...state.manualTx];return all.filter(t=>t.date<=today);},[state.templates,state.manualTx]);
   return(
     <div style={{minHeight:"100vh",background:FT.bg,paddingBottom:80}}>
       <div style={{padding:"24px 20px 16px",background:`linear-gradient(180deg,${FT.bg}ee,transparent)`,position:"sticky",top:0,zIndex:10,backdropFilter:"blur(12px)"}}><div style={{maxWidth:560,margin:"0 auto"}}>
