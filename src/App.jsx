@@ -207,7 +207,96 @@ const FinanceTmplForm=({init,onSave,onClose,title})=>{
 
 const FIN_DEF={templates:[{id:uid(),type:"ingreso",category:"Salario",desc:"Salario semanal",amount:4500,recurrence:"semanal",startDate:"2026-05-01"},{id:uid(),type:"gasto",category:"Renta",desc:"Renta departamento",amount:5500,recurrence:"mensual",startDate:"2026-05-01"},{id:uid(),type:"gasto",category:"Comida",desc:"Super semanal",amount:900,recurrence:"semanal",startDate:"2026-05-03"}],manualTx:[],debts:[],goals:[],budgets:[],wishlist:[]};
 
-const FinDashboard=({state,allTx})=>{const{debts,goals,budgets}=state;const now=new Date();const mTx=allTx.filter(t=>{const d=new Date(t.date+"T12:00:00");return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});const ing=mTx.filter(t=>t.type==="ingreso").reduce((a,t)=>a+t.amount,0);const gas=mTx.filter(t=>t.type==="gasto").reduce((a,t)=>a+t.amount,0);const bal=ing-gas;const tDeu=debts.reduce((a,d)=>a+(d.total-d.paid),0);const tAho=goals.reduce((a,g)=>a+g.saved,0);const sr=ing>0?((ing-gas)/ing)*100:0;const byCat={};mTx.filter(t=>t.type==="gasto").forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});const catArr=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);return<div><div style={{fontFamily:FT.f1,fontSize:26,fontWeight:900,color:"#e8e4dc",marginBottom:4}}>Resumen Financiero</div><div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",marginBottom:24,letterSpacing:1}}>{now.toLocaleString("es-MX",{month:"long",year:"numeric"}).toUpperCase()}</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>{[{label:"Ingresos",val:fmt(ing),color:FT.a2,icon:"↑"},{label:"Gastos",val:fmt(gas),color:FT.a4,icon:"↓"},{label:"Balance",val:fmt(bal),color:bal>=0?FT.a2:FT.a4,icon:"⊙"},{label:"Tasa ahorro",val:fmtP(sr),color:FT.a3,icon:"◈"}].map(k=><FCard key={k.label} style={{padding:16}}><div style={{display:"flex",justifyContent:"space-between"}}><div><div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>{k.label}</div><div style={{fontFamily:FT.f1,fontSize:20,fontWeight:700,color:k.color}}>{k.val}</div></div><span style={{fontSize:18,color:k.color,opacity:.6}}>{k.icon}</span></div></FCard>)}</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}><FCard style={{padding:16}}><div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>Deuda total</div><div style={{fontFamily:FT.f1,fontSize:18,fontWeight:700,color:FT.a4}}>{fmt(tDeu)}</div></FCard><FCard style={{padding:16}}><div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>Total ahorrado</div><div style={{fontFamily:FT.f1,fontSize:18,fontWeight:700,color:FT.a2}}>{fmt(tAho)}</div></FCard></div>{catArr.length>0&&<FCard style={{marginBottom:16}}><div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:14}}>Top gastos del mes</div>{catArr.map(([cat,amt])=><div key={cat} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#e8e4dc"}}>{cat}</span><span style={{fontSize:13,fontFamily:FT.f2,color:CAT_COLORS[cat]||FT.muted}}>{fmt(amt)}</span></div><FBar pct={gas>0?(amt/gas)*100:0} color={CAT_COLORS[cat]||FT.muted}/></div>)}</FCard>}{budgets.length>0&&<FCard><div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:14}}>Presupuestos</div>{budgets.map(b=>{const sp=mTx.filter(t=>t.type==="gasto"&&t.category===b.category).reduce((a,t)=>a+t.amount,0);const pct=b.limit>0?(sp/b.limit)*100:0;const ov=pct>100;return<div key={b.id} style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:13,color:"#e8e4dc"}}>{b.category}</span><span style={{fontSize:12,fontFamily:FT.f2,color:ov?FT.a4:"#aaaacc"}}>{fmt(sp)}/{fmt(b.limit)}{ov?" ⚠️":""}</span></div><FBar pct={pct} color={ov?FT.a4:b.color}/></div>})}</FCard>}</div>;};
+const FinDashboard=({state,allTx})=>{
+  const{debts,goals,budgets}=state;
+  const now=new Date();
+  const mTx=allTx.filter(t=>{const d=new Date(t.date+"T12:00:00");return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+  const ing=mTx.filter(t=>t.type==="ingreso").reduce((a,t)=>a+t.amount,0);
+  const gas=mTx.filter(t=>t.type==="gasto").reduce((a,t)=>a+t.amount,0);
+  const bal=ing-gas;
+  const tDeu=debts.reduce((a,d)=>a+(d.total-d.paid),0);
+  const tAho=goals.reduce((a,g)=>a+g.saved,0);
+  const sr=ing>0?((ing-gas)/ing)*100:0;
+  const byCat={};mTx.filter(t=>t.type==="gasto").forEach(t=>{byCat[t.category]=(byCat[t.category]||0)+t.amount;});
+  const catArr=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const lastTx=[...allTx].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
+  return(
+    <div>
+      <div style={{fontFamily:FT.f1,fontSize:26,fontWeight:900,color:"#e8e4dc",marginBottom:4}}>Resumen Financiero</div>
+      <div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",marginBottom:20,letterSpacing:1}}>{now.toLocaleString("es-MX",{month:"long",year:"numeric"}).toUpperCase()}</div>
+
+      {/* KPIs row */}
+      <div className="fin-widget-grid-3" style={{marginBottom:14}}>
+        {[{label:"Ingresos",val:fmt(ing),color:FT.a2,icon:"↑"},{label:"Gastos",val:fmt(gas),color:FT.a4,icon:"↓"},{label:"Balance",val:fmt(bal),color:bal>=0?FT.a2:FT.a4,icon:"⊙"},{label:"Tasa ahorro",val:fmtP(sr),color:FT.a3,icon:"◈"},{label:"Deuda total",val:fmt(tDeu),color:FT.a4,icon:"⊗"},{label:"Total ahorrado",val:fmt(tAho),color:FT.a2,icon:"◎"}].map(k=>(
+          <FCard key={k.label} style={{padding:16}}>
+            <div style={{display:"flex",justifyContent:"space-between"}}>
+              <div>
+                <div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>{k.label}</div>
+                <div style={{fontFamily:FT.f1,fontSize:20,fontWeight:700,color:k.color}}>{k.val}</div>
+              </div>
+              <span style={{fontSize:18,color:k.color,opacity:.6}}>{k.icon}</span>
+            </div>
+          </FCard>
+        ))}
+      </div>
+
+      {/* Middle row: top gastos + últimos movimientos */}
+      <div className="fin-widget-grid" style={{marginBottom:14}}>
+        {catArr.length>0&&(
+          <FCard>
+            <div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:14}}>Top gastos del mes</div>
+            {catArr.map(([cat,amt])=>(
+              <div key={cat} style={{marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                  <span style={{fontSize:13,color:"#e8e4dc"}}>{cat}</span>
+                  <span style={{fontSize:13,fontFamily:FT.f2,color:CAT_COLORS[cat]||FT.muted}}>{fmt(amt)}</span>
+                </div>
+                <FBar pct={gas>0?(amt/gas)*100:0} color={CAT_COLORS[cat]||FT.muted}/>
+              </div>
+            ))}
+          </FCard>
+        )}
+        <FCard>
+          <div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:14}}>Últimos movimientos</div>
+          {lastTx.length===0&&<div style={{color:"#aaaacc",fontSize:12,fontFamily:FT.f2,textAlign:"center",padding:"16px 0"}}>Sin movimientos aún</div>}
+          {lastTx.map(t=>(
+            <div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #1e1e30"}}>
+              <div>
+                <div style={{color:"#e8e4dc",fontSize:13,fontFamily:FT.f3}}>{t.desc||t.category}</div>
+                <div style={{color:CAT_COLORS[t.category]||"#aaaacc",fontSize:10,fontFamily:FT.f2}}>{t.category} · {t.date}</div>
+              </div>
+              <div style={{fontFamily:FT.f1,fontSize:15,fontWeight:700,color:t.type==="ingreso"?FT.a2:FT.a4}}>
+                {t.type==="ingreso"?"+":"-"}{fmt(t.amount)}
+              </div>
+            </div>
+          ))}
+        </FCard>
+      </div>
+
+      {/* Presupuestos */}
+      {budgets.length>0&&(
+        <FCard>
+          <div style={{fontFamily:FT.f2,fontSize:11,color:"#aaaacc",letterSpacing:1,textTransform:"uppercase",marginBottom:14}}>Presupuestos</div>
+          <div className="fin-widget-grid">
+            {budgets.map(b=>{
+              const sp=mTx.filter(t=>t.type==="gasto"&&t.category===b.category).reduce((a,t)=>a+t.amount,0);
+              const pct=b.limit>0?(sp/b.limit)*100:0;const ov=pct>100;
+              return(
+                <div key={b.id} style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                    <span style={{fontSize:13,color:"#e8e4dc"}}>{b.category}</span>
+                    <span style={{fontSize:12,fontFamily:FT.f2,color:ov?FT.a4:"#aaaacc"}}>{fmt(sp)}/{fmt(b.limit)}{ov?" ⚠️":""}</span>
+                  </div>
+                  <FBar pct={pct} color={ov?FT.a4:b.color}/>
+                </div>
+              );
+            })}
+          </div>
+        </FCard>
+      )}
+    </div>
+  );
+};
 
 const FinTransactions=({state,setState,allTx})=>{const[view,setView]=useState("movimientos");const[modal,setModal]=useState(false);const[editTmpl,setEditTmpl]=useState(null);const[manualModal,setManualModal]=useState(false);const[editManual,setEditManual]=useState(null);const[filter,setFilter]=useState("todos");const[filterMonth,setFilterMonth]=useState("all");const[mf,setMFRaw]=useState({type:"gasto",category:"Comida",desc:"",amount:"",date:new Date().toISOString().slice(0,10),recurrence:"unica"});const setMF=(k,v)=>setMFRaw(f=>({...f,[k]:v}));const months=useMemo(()=>{const s=new Set(allTx.map(t=>t.date.slice(0,7)));return["all",...[...s].sort().reverse()];},[allTx]);const visible=allTx.filter(t=>filter==="todos"||t.type===filter).filter(t=>filterMonth==="all"||t.date.startsWith(filterMonth)).sort((a,b)=>new Date(b.date)-new Date(a.date));const tmplDef={type:"gasto",category:"Comida",desc:"",amount:"",recurrence:"mensual",startDate:new Date().toISOString().slice(0,10)};const saveTmpl=(data)=>{const tmpl={...data,id:editTmpl?editTmpl.id:uid()};setState(s=>({...s,templates:editTmpl?s.templates.map(t=>t.id===editTmpl.id?tmpl:t):[tmpl,...s.templates]}));setModal(false);setEditTmpl(null);};const delTmpl=(id)=>setState(s=>({...s,templates:s.templates.filter(t=>t.id!==id)}));const saveManual=()=>{if(!mf.amount||!mf.date)return;const tx={...mf,amount:parseFloat(mf.amount)||0,id:editManual?editManual.id:uid(),auto:false};setState(s=>({...s,manualTx:editManual?s.manualTx.map(t=>t.id===editManual.id?tx:t):[tx,...s.manualTx]}));setManualModal(false);};const delManual=(id)=>setState(s=>({...s,manualTx:s.manualTx.filter(t=>t.id!==id)}));return<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{fontFamily:FT.f1,fontSize:24,fontWeight:900,color:"#e8e4dc"}}>Movimientos</div><div style={{display:"flex",gap:8}}><FBtn onClick={()=>{setEditManual(null);setMFRaw({type:"gasto",category:"Comida",desc:"",amount:"",date:new Date().toISOString().slice(0,10),recurrence:"unica"});setManualModal(true);}} color={FT.a2} small>+ Único</FBtn><FBtn onClick={()=>{setEditTmpl(null);setModal(true);}} color={FT.a5} small>+ Recurrente</FBtn></div></div><div style={{display:"flex",gap:8,marginBottom:16}}>{[{id:"movimientos",label:"Historial"},{id:"recurrentes",label:"Plantillas"}].map(s=><button key={s.id} onClick={()=>setView(s.id)} style={{flex:1,padding:"8px 0",borderRadius:10,border:`1px solid ${view===s.id?FT.a1:FT.border}`,background:view===s.id?`${FT.a1}18`:"transparent",color:view===s.id?FT.a1:"#aaaacc",fontFamily:FT.f2,fontSize:11,cursor:"pointer"}}>{s.label}</button>)}</div>{view==="movimientos"&&<><div style={{display:"flex",gap:6,marginBottom:10}}>{["todos","ingreso","gasto"].map(f=><button key={f} onClick={()=>setFilter(f)} style={{padding:"5px 12px",borderRadius:20,border:`1px solid ${filter===f?FT.a1:FT.border}`,background:filter===f?`${FT.a1}18`:"transparent",color:filter===f?FT.a1:"#aaaacc",fontFamily:FT.f2,fontSize:10,cursor:"pointer",textTransform:"uppercase",letterSpacing:1}}>{f}</button>)}</div><select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} style={{width:"100%",padding:"8px 14px",background:"#0d0d1a",border:`1px solid ${FT.border}`,borderRadius:10,color:FT.text,fontFamily:FT.f3,fontSize:13,marginBottom:12,outline:"none"}}><option value="all">Todos los meses</option>{months.filter(m=>m!=="all").map(m=><option key={m} value={m}>{m}</option>)}</select>{visible.length===0&&<div style={{textAlign:"center",color:"#aaaacc",padding:"40px 0",fontFamily:FT.f2,fontSize:12}}>Sin transacciones</div>}{visible.map(t=><FCard key={t.id} style={{marginBottom:8,padding:14}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"}}><FPill color={t.type==="ingreso"?FT.a2:FT.a4} small>{t.type}</FPill><FPill color={REC_COLOR[t.recurrence]||FT.muted} small>{REC_LABEL[t.recurrence]||t.recurrence}</FPill><span style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc"}}>{t.date}</span></div><div style={{fontFamily:FT.f3,fontSize:14,fontWeight:500,marginBottom:2,color:"#e8e4dc"}}>{t.desc||t.category}</div><div style={{fontFamily:FT.f2,fontSize:10,color:CAT_COLORS[t.category]||"#aaaacc"}}>{t.category}</div>{t.auto&&<div style={{fontFamily:FT.f2,fontSize:9,color:"#7777aa",marginTop:2}}>◈ Auto-generado</div>}</div><div style={{textAlign:"right"}}><div style={{fontFamily:FT.f1,fontSize:16,fontWeight:700,color:t.type==="ingreso"?FT.a2:FT.a4,marginBottom:t.auto?0:8}}>{t.type==="ingreso"?"+":"-"}{fmt(t.amount)}</div>{!t.auto&&<div style={{display:"flex",gap:6,marginTop:6}}><button onClick={()=>{setEditManual(t);setMFRaw({...t,amount:String(t.amount)});setManualModal(true);}} style={{background:"none",border:`1px solid ${FT.border}`,borderRadius:6,padding:"3px 8px",color:"#aaaacc",fontSize:11,cursor:"pointer"}}>✎</button><button onClick={()=>delManual(t.id)} style={{background:"none",border:`1px solid ${FT.a4}44`,borderRadius:6,padding:"3px 8px",color:FT.a4,fontSize:11,cursor:"pointer"}}>✕</button></div>}</div></div></FCard>)}</>}{view==="recurrentes"&&<><FCard style={{marginBottom:12,padding:14,border:`1px solid ${FT.a5}33`}}><div style={{fontFamily:FT.f2,fontSize:10,color:FT.a5,letterSpacing:1,marginBottom:4}}>¿CÓMO FUNCIONA?</div><div style={{fontFamily:FT.f3,fontSize:12,color:"#aaaacc",lineHeight:1.6}}>Define aquí tus ingresos y gastos recurrentes. La app genera automáticamente las entradas de cada mes a partir de la fecha de inicio.</div></FCard>{state.templates.length===0&&<div style={{textAlign:"center",color:"#aaaacc",padding:"40px 0",fontFamily:FT.f2,fontSize:12}}>Sin plantillas aún</div>}{state.templates.map(t=><FCard key={t.id} style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div style={{flex:1}}><div style={{display:"flex",gap:6,marginBottom:6,flexWrap:"wrap"}}><FPill color={t.type==="ingreso"?FT.a2:FT.a4} small>{t.type}</FPill><FPill color={REC_COLOR[t.recurrence]} small>{REC_LABEL[t.recurrence]}</FPill></div><div style={{fontFamily:FT.f1,fontSize:16,fontWeight:700,marginBottom:2,color:"#e8e4dc"}}>{t.desc}</div><div style={{fontFamily:FT.f2,fontSize:11,color:CAT_COLORS[t.category]||"#aaaacc",marginBottom:4}}>{t.category}</div><div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc"}}>Inicio: {t.startDate}</div></div><div style={{textAlign:"right"}}><div style={{fontFamily:FT.f1,fontSize:18,fontWeight:700,color:t.type==="ingreso"?FT.a2:FT.a4,marginBottom:8}}>{fmt(t.amount)}</div><div style={{display:"flex",gap:6}}><button onClick={()=>{setEditTmpl(t);setModal(true);}} style={{background:"none",border:`1px solid ${FT.border}`,borderRadius:6,padding:"3px 8px",color:"#aaaacc",fontSize:11,cursor:"pointer"}}>✎</button><button onClick={()=>delTmpl(t.id)} style={{background:"none",border:`1px solid ${FT.a4}44`,borderRadius:6,padding:"3px 8px",color:FT.a4,fontSize:11,cursor:"pointer"}}>✕</button></div></div></div></FCard>)}</>}{modal&&<FinanceTmplForm init={editTmpl?{...editTmpl,amount:String(editTmpl.amount)}:{...tmplDef}} title={editTmpl?"Editar plantilla":"Nueva plantilla"} onSave={saveTmpl} onClose={()=>{setModal(false);setEditTmpl(null);}}/>}{manualModal&&<FModal title={editManual?"Editar movimiento":"Nuevo movimiento"} onClose={()=>setManualModal(false)}><FSelect label="Tipo" value={mf.type} onChange={v=>setMF("type",v)} options={[{value:"gasto",label:"Gasto"},{value:"ingreso",label:"Ingreso"}]}/><FSelect label="Categoría" value={mf.category} onChange={v=>setMF("category",v)} options={(mf.type==="ingreso"?ING_CATS:GAS_CATS).map(c=>({value:c,label:c}))}/><FInput label="Descripción" value={mf.desc} onChange={v=>setMF("desc",v)} placeholder="Opcional"/><FInput label="Monto (MXN)" type="number" value={mf.amount} onChange={v=>setMF("amount",v)} placeholder="0"/><FInput label="Fecha" type="date" value={mf.date} onChange={v=>setMF("date",v)}/><div style={{display:"flex",gap:8}}><FBtn onClick={saveManual} color={mf.type==="ingreso"?FT.a2:FT.a4} style={{flex:1}}>Guardar</FBtn><FBtn onClick={()=>setManualModal(false)} color={FT.muted} outline style={{flex:1}}>Cancelar</FBtn></div></FModal>}</div>;};
 
@@ -221,34 +310,93 @@ const FinWishlist=({state,setState})=>{const[modal,setModal]=useState(false);con
 
 const FIN_TABS=[{id:"dashboard",label:"Resumen",icon:"◈"},{id:"transactions",label:"Movimientos",icon:"⇅"},{id:"debts",label:"Deudas",icon:"⊗"},{id:"goals",label:"Metas",icon:"◎"},{id:"budgets",label:"Presupuesto",icon:"▦"},{id:"wishlist",label:"Deseos",icon:"♡"}];
 
+const FIN_SIDEBAR_STYLE = `
+  .fin-layout { display: flex; flex-direction: column; min-height: 100vh; background: #0a0a14; }
+  .fin-sidebar { display: none; }
+  .fin-mobile-nav { display: flex; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: #0e0e1a; border-top: 1px solid #1e1e30; z-index: 20; }
+  .fin-main { padding: 0 16px 80px; max-width: 560px; margin: 0 auto; width: 100%; }
+  .fin-topbar { display: block; }
+  @media (min-width: 768px) {
+    .fin-layout { flex-direction: row; }
+    .fin-sidebar { display: flex; flex-direction: column; width: 180px; min-height: 100vh; background: #0d0d1a; border-right: 1px solid #1e1e30; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; z-index: 20; }
+    .fin-mobile-nav { display: none; }
+    .fin-main { max-width: 100%; margin: 0; padding: 24px 28px 40px; flex: 1; overflow-y: auto; }
+    .fin-topbar { display: none; }
+    .fin-widget-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .fin-widget-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .fin-widget-full { grid-column: 1 / -1; }
+    .fin-widget-left { grid-column: 1 / 2; }
+    .fin-widget-right { grid-column: 2 / 3; }
+  }
+  @media (max-width: 767px) {
+    .fin-widget-grid, .fin-widget-grid-3 { display: block; }
+  }
+`;
+
 const FinanceTracker=({onBack})=>{
   const[state,setStateRaw]=useState(()=>fLoad()??FIN_DEF);
   const[tab,setTab]=useState("dashboard");
   const setState=(upd)=>setStateRaw(prev=>{const next=typeof upd==="function"?upd(prev):upd;fSave(next);return next;});
-  const allTx=useMemo(()=>{const now=new Date();const today=now.toISOString().slice(0,10);const instances=[];for(let offset=-2;offset<=1;offset++){const d=new Date(now.getFullYear(),now.getMonth()+offset,1);state.templates.forEach(t=>generateInstances(t,d.getFullYear(),d.getMonth()).forEach(i=>instances.push(i)));}// Only show entries on or before today
-const all=[...instances,...state.manualTx];return all.filter(t=>t.date<=today);},[state.templates,state.manualTx]);
+  const allTx=useMemo(()=>{const now=new Date();const today=now.toISOString().slice(0,10);const instances=[];for(let offset=-2;offset<=1;offset++){const d=new Date(now.getFullYear(),now.getMonth()+offset,1);state.templates.forEach(t=>generateInstances(t,d.getFullYear(),d.getMonth()).forEach(i=>instances.push(i)));}const all=[...instances,...state.manualTx];return all.filter(t=>t.date<=today);},[state.templates,state.manualTx]);
+
+  const tabProps={state,setState,allTx};
+  const today=new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}).toUpperCase();
+
   return(
-    <div style={{minHeight:"100vh",background:FT.bg,paddingBottom:80}}>
-      <div style={{padding:"24px 20px 16px",background:`linear-gradient(180deg,${FT.bg}ee,transparent)`,position:"sticky",top:0,zIndex:10,backdropFilter:"blur(12px)"}}><div style={{maxWidth:560,margin:"0 auto"}}>
+    <div className="fin-layout">
+      <style>{FIN_SIDEBAR_STYLE}</style>
+
+      {/* ── SIDEBAR (desktop only) ── */}
+      <div className="fin-sidebar">
+        <div style={{padding:"24px 16px 16px"}}>
+          <button onClick={onBack} style={{background:"none",border:"none",color:"#7ee2a8",fontFamily:FT.f2,fontSize:10,cursor:"pointer",marginBottom:16,padding:0,display:"block"}}>← Hub</button>
+          <div style={{fontFamily:FT.f1,fontSize:20,fontWeight:900,color:"#e8e4dc",lineHeight:1}}>Finance</div>
+          <div style={{fontFamily:FT.f2,fontSize:9,color:FT.a3,letterSpacing:3,marginTop:4}}>TRACKER · MXN</div>
+          <div style={{fontFamily:FT.f2,fontSize:9,color:"#555",marginTop:6}}>{today}</div>
+        </div>
+        <div style={{borderTop:"1px solid #1e1e30",padding:"12px 8px",flex:1}}>
+          {FIN_TABS.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+              width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 10px",
+              background:tab===t.id?`${FT.a1}18`:"none",border:"none",
+              borderRadius:8,cursor:"pointer",marginBottom:2,textAlign:"left",
+              color:tab===t.id?FT.a1:"#8888aa",transition:"all .15s"
+            }}>
+              <span style={{fontSize:15,lineHeight:1,flexShrink:0}}>{t.icon}</span>
+              <span style={{fontFamily:FT.f2,fontSize:11}}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── MOBILE TOPBAR ── */}
+      <div className="fin-topbar" style={{padding:"24px 20px 16px",background:`linear-gradient(180deg,#0a0a14ee,transparent)`,position:"sticky",top:0,zIndex:10,backdropFilter:"blur(12px)"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"#7ee2a8",fontFamily:FT.f2,fontSize:11,cursor:"pointer",marginBottom:6,padding:0}}>← Hub</button>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
           <div>
             <div style={{fontFamily:FT.f1,fontSize:26,fontWeight:900,color:"#e8e4dc",lineHeight:1}}>Finance</div>
             <div style={{fontFamily:FT.f2,fontSize:11,color:FT.a3,letterSpacing:3,marginTop:2}}>TRACKER · MXN</div>
           </div>
-          <div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc",letterSpacing:1}}>{new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}).toUpperCase()}</div>
+          <div style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc",letterSpacing:1}}>{today}</div>
         </div>
-      </div></div>
-      <div style={{padding:"0 16px",maxWidth:560,margin:"0 auto"}}>
-        {tab==="dashboard"&&<FinDashboard state={state} allTx={allTx}/>}
-        {tab==="transactions"&&<FinTransactions state={state} setState={setState} allTx={allTx}/>}
+      </div>
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="fin-main">
+        {tab==="dashboard"&&<FinDashboard {...tabProps}/>}
+        {tab==="transactions"&&<FinTransactions {...tabProps}/>}
         {tab==="debts"&&<FinDebts state={state} setState={setState}/>}
         {tab==="goals"&&<FinGoals state={state} setState={setState}/>}
-        {tab==="budgets"&&<FinBudgets state={state} setState={setState} allTx={allTx}/>}
+        {tab==="budgets"&&<FinBudgets {...tabProps}/>}
         {tab==="wishlist"&&<FinWishlist state={state} setState={setState}/>}
       </div>
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#0e0e1a",borderTop:`1px solid ${FT.border}`,display:"flex",zIndex:20}}>
-        {FIN_TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px 2px 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t.id?FT.a1:"#8888aa"}}><span style={{fontSize:16,lineHeight:1}}>{t.icon}</span><span style={{fontFamily:FT.f2,fontSize:9,letterSpacing:.5}}>{t.label}</span></button>)}
+
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <div className="fin-mobile-nav">
+        {FIN_TABS.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,padding:"10px 2px 8px",background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:tab===t.id?FT.a1:"#8888aa"}}>
+          <span style={{fontSize:16,lineHeight:1}}>{t.icon}</span>
+          <span style={{fontFamily:FT.f2,fontSize:9,letterSpacing:.5}}>{t.label}</span>
+        </button>)}
       </div>
     </div>
   );
