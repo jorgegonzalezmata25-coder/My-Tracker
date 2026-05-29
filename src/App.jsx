@@ -353,10 +353,8 @@ const FinAnalysis = ({ allTx }) => {
     return [...s].sort().reverse();
   }, [allTx]);
 
-  const [selMonth, setSelMonth] = useState(() => {
-    const m = now.toISOString().slice(0, 7);
-    return m;
-  });
+  const [selMonth, setSelMonth] = useState(() => now.toISOString().slice(0, 7));
+  const [selCat, setSelCat] = useState(null); // {name, type, color}
 
   const mTx = allTx.filter(t => t.date.startsWith(selMonth));
 
@@ -365,9 +363,7 @@ const FinAnalysis = ({ allTx }) => {
     mTx.filter(t => t.type === "gasto").forEach(t => {
       map[t.category] = (map[t.category] || 0) + t.amount;
     });
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, value], i) => ({ name, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([name,value],i)=>({name,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   }, [mTx]);
 
   const ingresosByCat = useMemo(() => {
@@ -375,92 +371,134 @@ const FinAnalysis = ({ allTx }) => {
     mTx.filter(t => t.type === "ingreso").forEach(t => {
       map[t.category] = (map[t.category] || 0) + t.amount;
     });
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, value], i) => ({ name, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([name,value],i)=>({name,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   }, [mTx]);
 
-  const totalGastos = gastosByCat.reduce((a, d) => a + d.value, 0);
-  const totalIngresos = ingresosByCat.reduce((a, d) => a + d.value, 0);
+  const totalGastos = gastosByCat.reduce((a,d)=>a+d.value,0);
+  const totalIngresos = ingresosByCat.reduce((a,d)=>a+d.value,0);
+
+  const handleSelect = (cat, type) => {
+    if (selCat && selCat.name === cat.name && selCat.type === type) {
+      setSelCat(null); // toggle off
+    } else {
+      setSelCat({ name: cat.name, type, color: cat.color });
+    }
+  };
+
+  const detailTx = selCat
+    ? mTx.filter(t => t.type === selCat.type && t.category === selCat.name).sort((a,b)=>new Date(b.date)-new Date(a.date))
+    : [];
+
+  const PieWithClick = ({ data, total, type }) => (
+    <>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        <PieChart data={data} size={200} onSliceClick={(d) => handleSelect(d, type)} />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {data.map(d => {
+          const isSelected = selCat && selCat.name === d.name && selCat.type === type;
+          return (
+            <div key={d.name}
+              onClick={() => handleSelect(d, type)}
+              style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
+                background: isSelected ? `${d.color}18` : "transparent",
+                border: isSelected ? `1px solid ${d.color}55` : "1px solid transparent",
+                borderRadius: 8, padding: "6px 8px", transition: "all .15s" }}>
+              <div style={{ width: 12, height: 12, borderRadius: 3, background: d.color, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ color: "#e8e4dc", fontSize: 13, fontFamily: FT.f3 }}>{d.name}</span>
+                  <span style={{ color: d.color, fontSize: 13, fontFamily: FT.f2, fontWeight: 600 }}>{fmt(d.value)}</span>
+                </div>
+                <div style={{ background: FT.border, borderRadius: 99, height: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${total > 0 ? (d.value / total) * 100 : 0}%`, height: "100%", background: d.color, borderRadius: 99 }} />
+                </div>
+                <div style={{ color: "#aaaacc", fontSize: 10, fontFamily: FT.f2, marginTop: 2 }}>
+                  {total > 0 ? Math.round((d.value / total) * 100) : 0}%
+                  {isSelected && <span style={{ color: d.color, marginLeft: 6 }}>▾ ver detalle</span>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
 
   return (
     <div>
       <div className="fin-page-title" style={{ fontFamily: FT.f1, fontSize: 24, fontWeight: 900, color: "#e8e4dc", marginBottom: 4 }}>Análisis</div>
 
-      {/* Month selector */}
       <div style={{ marginBottom: 24 }}>
-        <select value={selMonth} onChange={e => setSelMonth(e.target.value)}
+        <select value={selMonth} onChange={e => { setSelMonth(e.target.value); setSelCat(null); }}
           style={{ padding: "8px 14px", background: "#0d0d1a", border: `1px solid ${FT.border}`, borderRadius: 10, color: FT.text, fontFamily: FT.f3, fontSize: 13, outline: "none" }}>
           {months.length === 0 && <option value={now.toISOString().slice(0,7)}>{now.toLocaleString("es-MX",{month:"long",year:"numeric"}).toUpperCase()}</option>}
           {months.map(m => {
             const [y, mo] = m.split("-");
-            const label = new Date(parseInt(y), parseInt(mo) - 1, 1).toLocaleString("es-MX", { month: "long", year: "numeric" }).toUpperCase();
+            const label = new Date(parseInt(y), parseInt(mo)-1, 1).toLocaleString("es-MX",{month:"long",year:"numeric"}).toUpperCase();
             return <option key={m} value={m}>{label}</option>;
           })}
         </select>
       </div>
 
-      <div className="fin-widget-grid">
-        {/* Gastos */}
+      {/* Gráficas */}
+      <div className="fin-widget-grid" style={{ marginBottom: 16 }}>
         <FCard>
           <div style={{ fontFamily: FT.f2, fontSize: 11, color: FT.a4, letterSpacing: 1, textTransform: "uppercase", marginBottom: 16 }}>Gastos del mes</div>
           {gastosByCat.length === 0
             ? <div style={{ color: "#aaaacc", fontSize: 12, fontFamily: FT.f2, textAlign: "center", padding: "32px 0" }}>Sin gastos este mes</div>
-            : <>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-                <PieChart data={gastosByCat} size={200} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {gastosByCat.map(d => (
-                  <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ color: "#e8e4dc", fontSize: 13, fontFamily: FT.f3 }}>{d.name}</span>
-                        <span style={{ color: d.color, fontSize: 13, fontFamily: FT.f2, fontWeight: 600 }}>{fmt(d.value)}</span>
-                      </div>
-                      <div style={{ background: FT.border, borderRadius: 99, height: 4, overflow: "hidden" }}>
-                        <div style={{ width: `${totalGastos > 0 ? (d.value / totalGastos) * 100 : 0}%`, height: "100%", background: d.color, borderRadius: 99 }} />
-                      </div>
-                      <div style={{ color: "#aaaacc", fontSize: 10, fontFamily: FT.f2, marginTop: 2 }}>{totalGastos > 0 ? Math.round((d.value / totalGastos) * 100) : 0}%</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          }
+            : <PieWithClick data={gastosByCat} total={totalGastos} type="gasto" />}
         </FCard>
-
-        {/* Ingresos */}
         <FCard>
           <div style={{ fontFamily: FT.f2, fontSize: 11, color: FT.a2, letterSpacing: 1, textTransform: "uppercase", marginBottom: 16 }}>Ingresos del mes</div>
           {ingresosByCat.length === 0
             ? <div style={{ color: "#aaaacc", fontSize: 12, fontFamily: FT.f2, textAlign: "center", padding: "32px 0" }}>Sin ingresos este mes</div>
-            : <>
-              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-                <PieChart data={ingresosByCat} size={200} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {ingresosByCat.map(d => (
-                  <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: 3, background: d.color, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ color: "#e8e4dc", fontSize: 13, fontFamily: FT.f3 }}>{d.name}</span>
-                        <span style={{ color: d.color, fontSize: 13, fontFamily: FT.f2, fontWeight: 600 }}>{fmt(d.value)}</span>
-                      </div>
-                      <div style={{ background: FT.border, borderRadius: 99, height: 4, overflow: "hidden" }}>
-                        <div style={{ width: `${totalIngresos > 0 ? (d.value / totalIngresos) * 100 : 0}%`, height: "100%", background: d.color, borderRadius: 99 }} />
-                      </div>
-                      <div style={{ color: "#aaaacc", fontSize: 10, fontFamily: FT.f2, marginTop: 2 }}>{totalIngresos > 0 ? Math.round((d.value / totalIngresos) * 100) : 0}%</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          }
+            : <PieWithClick data={ingresosByCat} total={totalIngresos} type="ingreso" />}
         </FCard>
       </div>
+
+      {/* Detalle de categoría seleccionada */}
+      {selCat && (
+        <FCard style={{ border: `1px solid ${selCat.color}44` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 14, height: 14, borderRadius: 4, background: selCat.color }} />
+              <div>
+                <div style={{ fontFamily: FT.f1, fontSize: 18, fontWeight: 700, color: "#e8e4dc" }}>{selCat.name}</div>
+                <div style={{ fontFamily: FT.f2, fontSize: 10, color: "#aaaacc", marginTop: 2 }}>
+                  {selCat.type === "gasto" ? "GASTOS" : "INGRESOS"} · {detailTx.length} movimiento{detailTx.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: FT.f1, fontSize: 20, fontWeight: 700, color: selCat.color }}>
+                {fmt(detailTx.reduce((a,t)=>a+t.amount,0))}
+              </div>
+              <button onClick={() => setSelCat(null)}
+                style={{ background: "none", border: "none", color: "#aaaacc", fontSize: 11, cursor: "pointer", fontFamily: FT.f2, marginTop: 4 }}>
+                ✕ cerrar
+              </button>
+            </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {detailTx.map(t => (
+              <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "10px 12px", background: "#0d0d1a", borderRadius: 8, marginBottom: 6 }}>
+                <div>
+                  <div style={{ color: "#e8e4dc", fontSize: 14, fontFamily: FT.f3, fontWeight: 500 }}>{t.desc || t.category}</div>
+                  <div style={{ color: "#aaaacc", fontSize: 11, fontFamily: FT.f2, marginTop: 2 }}>
+                    {t.date}
+                    {t.auto && <span style={{ color: "#7777aa", marginLeft: 8 }}>◈ Auto-generado</span>}
+                  </div>
+                </div>
+                <div style={{ fontFamily: FT.f1, fontSize: 16, fontWeight: 700, color: selCat.type === "ingreso" ? FT.a2 : FT.a4 }}>
+                  {selCat.type === "ingreso" ? "+" : "-"}{fmt(t.amount)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </FCard>
+      )}
     </div>
   );
 };
