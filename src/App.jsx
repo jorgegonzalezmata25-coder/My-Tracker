@@ -308,7 +308,162 @@ const FinBudgets=({state,setState,allTx})=>{const[modal,setModal]=useState(false
 
 const FinWishlist=({state,setState})=>{const[modal,setModal]=useState(false);const[edit,setEdit]=useState(null);const[form,setForm]=useState({name:"",price:"",priority:"media",saved:"",link:"",notes:"",img:""});const setF=(k,v)=>setForm(f=>({...f,[k]:v}));const PC={alta:FT.a4,media:FT.a3,baja:FT.a2};const sorted=[...state.wishlist].sort((a,b)=>({alta:0,media:1,baja:2}[a.priority]||1)-({alta:0,media:1,baja:2}[b.priority]||1));const save=()=>{if(!form.name||!form.price)return;const w={...form,price:parseFloat(form.price)||0,saved:parseFloat(form.saved)||0,id:edit?edit.id:uid()};setState(s=>({...s,wishlist:edit?s.wishlist.map(x=>x.id===edit.id?w:x):[w,...s.wishlist]}));setModal(false);};const del=(id)=>setState(s=>({...s,wishlist:s.wishlist.filter(w=>w.id!==id)}));const buy=(id)=>setState(s=>({...s,wishlist:s.wishlist.map(w=>w.id===id?{...w,bought:!w.bought}:w)}));return<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><div className="fin-page-title" style={{fontFamily:FT.f1,fontSize:24,fontWeight:900,color:"#e8e4dc"}}>Lista de deseos</div><FBtn onClick={()=>{setEdit(null);setForm({name:"",price:"",priority:"media",saved:"",link:"",notes:"",img:""});setModal(true);}} color={FT.a3} small>+ Agregar</FBtn></div>{sorted.length===0&&<div style={{textAlign:"center",color:"#aaaacc",padding:"40px 0",fontFamily:FT.f2,fontSize:12}}>Tu lista está vacía</div>}{sorted.map(w=>{const pct=w.price>0?(w.saved/w.price)*100:0;return<FCard key={w.id} style={{marginBottom:10,opacity:w.bought?.6:1}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8,gap:10}}><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4,flexWrap:"wrap"}}><div style={{fontFamily:FT.f1,fontSize:16,fontWeight:700,color:w.bought?"#9999bb":"#e8e4dc",textDecoration:w.bought?"line-through":"none"}}>{w.name}</div><FPill color={PC[w.priority]||FT.muted} small>{w.priority}</FPill></div>{w.notes&&<div style={{fontFamily:FT.f3,fontSize:12,color:"#aaaacc",marginTop:2}}>{w.notes}</div>}{w.link&&<a href={w.link} target="_blank" rel="noopener noreferrer" style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:6,fontSize:11,fontFamily:FT.f2,color:FT.a1,textDecoration:"none",borderBottom:`1px solid ${FT.a1}55`}}>🔗 Ver producto →</a>}</div><div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}><div style={{display:"flex",gap:5}}><button onClick={()=>buy(w.id)} style={{background:"none",border:`1px solid ${w.bought?FT.a2:FT.border}`,borderRadius:6,padding:"3px 8px",color:w.bought?FT.a2:"#9999bb",fontSize:11,cursor:"pointer"}}>{w.bought?"✓":"○"}</button><button onClick={()=>{setEdit(w);setForm({...w,price:String(w.price),saved:String(w.saved),img:w.img||""});setModal(true);}} style={{background:"none",border:`1px solid ${FT.border}`,borderRadius:6,padding:"3px 8px",color:"#9999bb",fontSize:11,cursor:"pointer"}}>✎</button><button onClick={()=>del(w.id)} style={{background:"none",border:`1px solid ${FT.a4}44`,borderRadius:6,padding:"3px 8px",color:FT.a4,fontSize:11,cursor:"pointer"}}>✕</button></div>{w.img&&<img src={w.img} alt={w.name} style={{width:120,height:90,objectFit:"cover",borderRadius:8,border:`1px solid ${FT.border}`}}/>}</div></div><div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><div style={{fontFamily:FT.f1,fontSize:18,fontWeight:700,color:FT.a3}}>{fmt(w.price)}</div>{w.saved>0&&<div style={{fontFamily:FT.f2,fontSize:12,color:FT.a2}}>Ahorrado {fmt(w.saved)}</div>}</div>{w.saved>0&&<><FBar pct={pct} color={FT.a3}/><div style={{display:"flex",justifyContent:"space-between",marginTop:4}}><span style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc"}}>{fmtP(pct)}</span>{w.price-w.saved>0&&<span style={{fontFamily:FT.f2,fontSize:10,color:"#aaaacc"}}>Faltan {fmt(w.price-w.saved)}</span>}</div></>}</FCard>})}{modal&&<FModal title={edit?"Editar artículo":"Nuevo artículo"} onClose={()=>setModal(false)}><FInput label="Nombre" value={form.name} onChange={v=>setF("name",v)} placeholder="¿Qué quieres comprar?"/><FInput label="Precio (MXN)" type="number" value={form.price} onChange={v=>setF("price",v)} placeholder="0"/><FSelect label="Prioridad" value={form.priority} onChange={v=>setF("priority",v)} options={[{value:"alta",label:"Alta"},{value:"media",label:"Media"},{value:"baja",label:"Baja"}]}/><FInput label="Ya ahorrado" type="number" value={form.saved} onChange={v=>setF("saved",v)} placeholder="0"/><FInput label="Link (opcional)" value={form.link} onChange={v=>setF("link",v)} placeholder="https://..."/><FInput label="Notas" value={form.notes} onChange={v=>setF("notes",v)} placeholder="Opcional"/><div style={{marginBottom:12}}><div style={{fontSize:11,fontFamily:FT.f2,color:"#aaaacc",marginBottom:4,letterSpacing:1,textTransform:"uppercase"}}>Imagen (opcional)</div><label style={{display:"block",cursor:"pointer"}}><div style={{width:"100%",padding:"10px 14px",background:"#0d0d1a",border:`1px solid ${FT.border}`,borderRadius:10,color:"#9999bb",fontFamily:FT.f3,fontSize:13,textAlign:"center"}}>{form.img?"✓ Imagen seleccionada — toca para cambiar":"📁 Seleccionar imagen del dispositivo"}</div><input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>setF("img",ev.target.result);reader.readAsDataURL(file);}}/></label>{form.img&&<img src={form.img} alt="preview" style={{width:"100%",maxHeight:120,objectFit:"cover",borderRadius:8,marginTop:8,border:`1px solid ${FT.border}`}}/>}{form.img&&<button onClick={()=>setF("img","")} style={{background:"none",border:"none",color:FT.a4,fontSize:11,cursor:"pointer",marginTop:4,fontFamily:FT.f2}}>✕ Quitar imagen</button>}</div><div style={{display:"flex",gap:8}}><FBtn onClick={save} color={FT.a3} style={{flex:1}}>Guardar</FBtn><FBtn onClick={()=>setModal(false)} color={FT.muted} outline style={{flex:1}}>Cancelar</FBtn></div></FModal>}</div>;};
 
-const FIN_TABS=[{id:"dashboard",label:"Resumen",icon:"◈"},{id:"transactions",label:"Movimientos",icon:"⇅"},{id:"debts",label:"Deudas",icon:"⊗"},{id:"goals",label:"Metas",icon:"◎"},{id:"budgets",label:"Presupuesto",icon:"▦"},{id:"wishlist",label:"Deseos",icon:"♡"}];
+const FIN_TABS=[{id:"dashboard",label:"Resumen",icon:"◈"},{id:"transactions",label:"Movimientos",icon:"⇅"},{id:"debts",label:"Deudas",icon:"⊗"},{id:"goals",label:"Metas",icon:"◎"},{id:"budgets",label:"Presupuesto",icon:"▦"},{id:"wishlist",label:"Deseos",icon:"♡"},{id:"analysis",label:"Análisis",icon:"◕"}];
+
+
+/* ── ANÁLISIS ── */
+const PIE_COLORS = [FT.a1, FT.a2, FT.a3, FT.a4, FT.a5, "#f97316", "#06b6d4", "#84cc16", "#f43f5e", "#8b5cf6", "#14b8a6", "#f59e0b"];
+
+function PieChart({ data, size = 180 }) {
+  if (!data || data.length === 0) return null;
+  const total = data.reduce((a, d) => a + d.value, 0);
+  if (total === 0) return null;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 8;
+  let cumAngle = -Math.PI / 2;
+  const slices = data.map((d, i) => {
+    const angle = (d.value / total) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(cumAngle);
+    const y1 = cy + r * Math.sin(cumAngle);
+    cumAngle += angle;
+    const x2 = cx + r * Math.cos(cumAngle);
+    const y2 = cy + r * Math.sin(cumAngle);
+    const large = angle > Math.PI ? 1 : 0;
+    const midAngle = cumAngle - angle / 2;
+    return { ...d, x1, y1, x2, y2, large, midAngle, pct: Math.round((d.value / total) * 100) };
+  });
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {slices.map((s, i) => (
+        <path key={i}
+          d={`M ${cx} ${cy} L ${s.x1} ${s.y1} A ${r} ${r} 0 ${s.large} 1 ${s.x2} ${s.y2} Z`}
+          fill={s.color} opacity={0.9} stroke={FT.bg} strokeWidth={2}
+        />
+      ))}
+      <circle cx={cx} cy={cy} r={r * 0.45} fill={FT.card} />
+      <text x={cx} y={cy - 6} textAnchor="middle" fill="#e8e4dc" fontSize={11} fontFamily={FT.f2}>{fmt(total)}</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" fill="#aaaacc" fontSize={9} fontFamily={FT.f2}>TOTAL</text>
+    </svg>
+  );
+}
+
+const FinAnalysis = ({ allTx }) => {
+  const now = new Date();
+  const months = useMemo(() => {
+    const s = new Set(allTx.map(t => t.date.slice(0, 7)));
+    return [...s].sort().reverse();
+  }, [allTx]);
+
+  const [selMonth, setSelMonth] = useState(() => {
+    const m = now.toISOString().slice(0, 7);
+    return m;
+  });
+
+  const mTx = allTx.filter(t => t.date.startsWith(selMonth));
+
+  const gastosByCat = useMemo(() => {
+    const map = {};
+    mTx.filter(t => t.type === "gasto").forEach(t => {
+      map[t.category] = (map[t.category] || 0) + t.amount;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value], i) => ({ name, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  }, [mTx]);
+
+  const ingresosByCat = useMemo(() => {
+    const map = {};
+    mTx.filter(t => t.type === "ingreso").forEach(t => {
+      map[t.category] = (map[t.category] || 0) + t.amount;
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, value], i) => ({ name, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  }, [mTx]);
+
+  const totalGastos = gastosByCat.reduce((a, d) => a + d.value, 0);
+  const totalIngresos = ingresosByCat.reduce((a, d) => a + d.value, 0);
+
+  return (
+    <div>
+      <div className="fin-page-title" style={{ fontFamily: FT.f1, fontSize: 24, fontWeight: 900, color: "#e8e4dc", marginBottom: 4 }}>Análisis</div>
+
+      {/* Month selector */}
+      <div style={{ marginBottom: 24 }}>
+        <select value={selMonth} onChange={e => setSelMonth(e.target.value)}
+          style={{ padding: "8px 14px", background: "#0d0d1a", border: `1px solid ${FT.border}`, borderRadius: 10, color: FT.text, fontFamily: FT.f3, fontSize: 13, outline: "none" }}>
+          {months.length === 0 && <option value={now.toISOString().slice(0,7)}>{now.toLocaleString("es-MX",{month:"long",year:"numeric"}).toUpperCase()}</option>}
+          {months.map(m => {
+            const [y, mo] = m.split("-");
+            const label = new Date(parseInt(y), parseInt(mo) - 1, 1).toLocaleString("es-MX", { month: "long", year: "numeric" }).toUpperCase();
+            return <option key={m} value={m}>{label}</option>;
+          })}
+        </select>
+      </div>
+
+      <div className="fin-widget-grid">
+        {/* Gastos */}
+        <FCard>
+          <div style={{ fontFamily: FT.f2, fontSize: 11, color: FT.a4, letterSpacing: 1, textTransform: "uppercase", marginBottom: 16 }}>Gastos del mes</div>
+          {gastosByCat.length === 0
+            ? <div style={{ color: "#aaaacc", fontSize: 12, fontFamily: FT.f2, textAlign: "center", padding: "32px 0" }}>Sin gastos este mes</div>
+            : <>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                <PieChart data={gastosByCat} size={200} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {gastosByCat.map(d => (
+                  <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: 3, background: d.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ color: "#e8e4dc", fontSize: 13, fontFamily: FT.f3 }}>{d.name}</span>
+                        <span style={{ color: d.color, fontSize: 13, fontFamily: FT.f2, fontWeight: 600 }}>{fmt(d.value)}</span>
+                      </div>
+                      <div style={{ background: FT.border, borderRadius: 99, height: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${totalGastos > 0 ? (d.value / totalGastos) * 100 : 0}%`, height: "100%", background: d.color, borderRadius: 99 }} />
+                      </div>
+                      <div style={{ color: "#aaaacc", fontSize: 10, fontFamily: FT.f2, marginTop: 2 }}>{totalGastos > 0 ? Math.round((d.value / totalGastos) * 100) : 0}%</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          }
+        </FCard>
+
+        {/* Ingresos */}
+        <FCard>
+          <div style={{ fontFamily: FT.f2, fontSize: 11, color: FT.a2, letterSpacing: 1, textTransform: "uppercase", marginBottom: 16 }}>Ingresos del mes</div>
+          {ingresosByCat.length === 0
+            ? <div style={{ color: "#aaaacc", fontSize: 12, fontFamily: FT.f2, textAlign: "center", padding: "32px 0" }}>Sin ingresos este mes</div>
+            : <>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+                <PieChart data={ingresosByCat} size={200} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {ingresosByCat.map(d => (
+                  <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: 3, background: d.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ color: "#e8e4dc", fontSize: 13, fontFamily: FT.f3 }}>{d.name}</span>
+                        <span style={{ color: d.color, fontSize: 13, fontFamily: FT.f2, fontWeight: 600 }}>{fmt(d.value)}</span>
+                      </div>
+                      <div style={{ background: FT.border, borderRadius: 99, height: 4, overflow: "hidden" }}>
+                        <div style={{ width: `${totalIngresos > 0 ? (d.value / totalIngresos) * 100 : 0}%`, height: "100%", background: d.color, borderRadius: 99 }} />
+                      </div>
+                      <div style={{ color: "#aaaacc", fontSize: 10, fontFamily: FT.f2, marginTop: 2 }}>{totalIngresos > 0 ? Math.round((d.value / totalIngresos) * 100) : 0}%</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          }
+        </FCard>
+      </div>
+    </div>
+  );
+};
 
 const FIN_SIDEBAR_STYLE = `
   .fin-layout { display: flex; flex-direction: column; min-height: 100vh; background: #0a0a14; }
@@ -405,6 +560,7 @@ const FinanceTracker=({onBack})=>{
         {tab==="goals"&&<FinGoals state={state} setState={setState}/>}
         {tab==="budgets"&&<FinBudgets {...tabProps}/>}
         {tab==="wishlist"&&<FinWishlist state={state} setState={setState}/>}
+        {tab==="analysis"&&<FinAnalysis allTx={allTx}/>}
       </div>
 
       {/* ── MOBILE BOTTOM NAV ── */}
